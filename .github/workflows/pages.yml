@@ -29,8 +29,9 @@ jobs:
             python3 -m json.tool "$f" > /dev/null || { echo "Invalid JSON: $f"; exit 1; }
           done
           cmp site/v0.1/servers/index.json site/v0.1/servers/index.html
+          latest_version=$(python3 -c 'import json, sys; print(json.load(sys.stdin)["server"]["version"])' < site/v0.1/servers/io.github.microsoft/workiq/versions/latest)
           cmp site/v0.1/servers/io.github.microsoft/workiq/versions/latest \
-              site/v0.1/servers/io.github.microsoft/workiq/versions/0.2.8
+              "site/v0.1/servers/io.github.microsoft/workiq/versions/$latest_version"
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
