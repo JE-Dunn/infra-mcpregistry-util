@@ -2,8 +2,14 @@
 
 Static [MCP registry v0.1](https://registry.modelcontextprotocol.io/docs) for GitHub Copilot
 (Enterprise > AI Controls > MCP > MCP Registry URL), hosted on GitHub Pages. It registers
-Microsoft Work IQ as `io.github.microsoft/workiq`. The server ID must exactly match the ID of the
+Microsoft Work IQ as `io.github.microsoft/workiq` and Power BI Modeling under the local IDs
+`powerbi-authoring-local` and `powerbi-modeling-mcp`. The server ID must exactly match the ID of the
 installed server ([enforcement docs](https://docs.github.com/en/copilot/reference/enterprise-administrators/mcp-private-registry-enforcement)).
+
+The Power BI names are unqualified local configuration names, not the namespaced names required by
+the MCP registry schema. They are included for exact-name allowlist matching; clients that enforce
+the schema may reject them. Both entries use the same Microsoft package. Review and accept its
+[EULA](https://github.com/microsoft/powerbi-modeling-mcp/blob/main/EULA.txt) before use.
 
 ## Layout (everything under `site/`, published as the Pages root)
 
@@ -13,6 +19,8 @@ site/v0.1/servers/index.html                                   -> GET /v0.1/serv
 site/v0.1/servers/index.json                                   -> identical copy, served as application/json
 site/v0.1/servers/io.github.microsoft/workiq/versions/latest   -> GET .../versions/latest
 site/v0.1/servers/io.github.microsoft/workiq/versions/0.2.8    -> GET .../versions/0.2.8
+site/v0.1/servers/powerbi-authoring-local/versions/{latest,1.0.1}
+site/v0.1/servers/powerbi-modeling-mcp/versions/{latest,1.0.1}
 ```
 
 Pages serves files literally, so the raw-slash directory layout matches `.../io.github.microsoft/workiq/...`.
@@ -35,10 +43,11 @@ path. **This must be verified after the first deploy.**
 
 ## Add a server
 
-1. Add `site/v0.1/servers/<namespace>/<name>/versions/<version>` and `.../versions/latest`
+1. Add `site/v0.1/servers/<server-id>/versions/<version>` and `.../versions/latest`
    (extensionless, same `{ "server": {...}, "_meta": {...} }` content as the existing files).
 2. Append the entry to `servers` in `site/v0.1/servers/index.json` and `index.html` (keep identical) and bump `metadata.count`.
-3. `name` must be the server's canonical ID (`namespace/name`).
+3. `name` must exactly match the installed server ID. Prefer the MCP schema's `namespace/name`
+   format; unqualified local IDs are an exception and may not work with schema-validating clients.
 4. Open a PR; the workflow validates the JSON on merge to `main`.
 
 ## Enable Pages and deploy
