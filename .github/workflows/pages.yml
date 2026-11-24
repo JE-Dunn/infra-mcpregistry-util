@@ -24,14 +24,26 @@ jobs:
       - uses: actions/checkout@v4
       - name: Validate registry JSON
         run: |
-          for f in site/v0.1/servers/index.json site/v0.1/servers/index.html \
-                   site/v0.1/servers/io.github.microsoft/workiq/versions/*; do
-            python3 -m json.tool "$f" > /dev/null || { echo "Invalid JSON: $f"; exit 1; }
-          done
-          cmp site/v0.1/servers/index.json site/v0.1/servers/index.html
-          latest_version=$(python3 -c 'import json, sys; print(json.load(sys.stdin)["server"]["version"])' < site/v0.1/servers/io.github.microsoft/workiq/versions/latest)
-          cmp site/v0.1/servers/io.github.microsoft/workiq/versions/latest \
-              "site/v0.1/servers/io.github.microsoft/workiq/versions/$latest_version"
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          root = Path("site/v0.1/servers")
+          assert (root / "index.json").read_bytes() == (root / "index.html").read_bytes()
+          index = json.loads((root / "index.json").read_text())
+          assert index["metadata"]["count"] == len(index["servers"])
+          names = set()
+          for entry in index["servers"]:
+              server = entry["server"]
+              name, version = server["name"], server["version"]
+              assert name not in names, f"Duplicate server: {name}"
+              names.add(name)
+              versions = root / name / "versions"
+              assert json.loads((versions / "latest").read_text()) == entry, name
+              assert json.loads((versions / version).read_text()) == entry, name
+          for path in root.glob("**/versions/*"):
+              json.loads(path.read_text())
+          PY
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
